@@ -120,8 +120,15 @@ class IntelligentAgent:
             print(f"\n  [STEP {step.step}] {step.goal}")
             print(f"    Tool: {step.tool}")
 
-            # Replace target placeholder
-            args_list = step.args.replace("{TARGET}", target).split()
+            # Replace target placeholder (handle flexible targets)
+            # If target is descriptive (not IP/domain), some tools may need adjustment
+            if target.lower() in ["local", "localhost", "127.0.0.1", "nearby", "around", "local network"]:
+                # For local scanning, use 127.0.0.1 or localhost as default
+                target_for_tool = "127.0.0.1"
+            else:
+                target_for_tool = target
+
+            args_list = step.args.replace("{TARGET}", target_for_tool).split()
 
             # Execute
             result = self.executor.execute(

@@ -84,7 +84,7 @@ class InteractiveMenu:
         print("─" * 60)
 
         mission = questionary.text(
-            "What's your mission? (e.g., 'find web vulnerabilities'):",
+            "What's your mission? (e.g., 'find web vulnerabilities', 'list bluetooth devices', 'scan for open ports'):",
             style=SPECTRAL_STYLE,
         ).ask()
 
@@ -92,12 +92,13 @@ class InteractiveMenu:
             return
 
         target = questionary.text(
-            "Target (IP or domain):",
+            "Target or context (IP, domain, network, or description - e.g., '192.168.1.0/24', 'nearby devices', 'local network'):",
             style=SPECTRAL_STYLE,
         ).ask()
 
         if not target:
-            return
+            # Allow mission-only execution (target can be inferred from mission)
+            target = "local"
 
         tier = questionary.select(
             "Execution tier:",
