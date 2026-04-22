@@ -1,0 +1,69 @@
+created: '2026-04-22T07:47:37.148030'
+cves_addressed: []
+description: Auto-generated playbook for web reconnaissance against web reconnaissance
+name: research-web-reconnaissance-20260422-074737
+steps:
+- args: dirb [OPTIONS]
+  goal: 'Run dirb: dirb \- Web Content Scanner'
+  step: 1
+  success_criteria: dirb execution completed without error
+  timeout: 30
+  tool: dirb
+- args: ffuf [OPTIONS]
+  goal: 'Run ffuf: \fBffuf \fP- Fast web fuzzer written in Go'
+  step: 2
+  success_criteria: ffuf execution completed without error
+  timeout: 30
+  tool: ffuf
+- args: nikto [OPTIONS]
+  goal: 'Run nikto: nikto \- Scan web server for known vulnerabilities'
+  step: 3
+  success_criteria: nikto execution completed without error
+  timeout: 30
+  tool: nikto
+- args: wafw00f [OPTIONS]
+  goal: 'Run wafw00f: WAFW00F \- Identify and fingerprint Web Application Firewall
+    products'
+  step: 4
+  success_criteria: wafw00f execution completed without error
+  timeout: 30
+  tool: wafw00f
+- args: wfuzz [OPTIONS]
+  goal: 'Run wfuzz: wfuzz \- a web application bruteforcer'
+  step: 5
+  success_criteria: wfuzz execution completed without error
+  timeout: 30
+  tool: wfuzz
+- args: whatweb [OPTIONS]
+  goal: 'Run whatweb: WhatWeb \- Next generation Web scanner. Identify technologies
+    used by websites.'
+  step: 6
+  success_criteria: whatweb execution completed without error
+  timeout: 30
+  tool: whatweb
+- args: dirsearch [OPTIONS]
+  goal: 'Run dirsearch: dirsearch \- An advanced command-line tool designed to brute
+    force directories and files in webservers'
+  step: 7
+  success_criteria: dirsearch execution completed without error
+  timeout: 30
+  tool: dirsearch
+- args: phpsploit [OPTIONS]
+  goal: "Run phpsploit: \\fBphpsploit\\fR \u2014 furtive tunnel based php webshell"
+  step: 8
+  success_criteria: phpsploit execution completed without error
+  timeout: 30
+  tool: phpsploit
+- args: skipfish [OPTIONS]
+  goal: 'Run skipfish: skipfish \- web application security scanner'
+  step: 9
+  success_criteria: skipfish execution completed without error
+  timeout: 30
+  tool: skipfish
+- args: websploit [OPTIONS]
+  goal: 'Run websploit: websploit \- Advanced MITM Framework'
+  step: 10
+  success_criteria: websploit execution completed without error
+  timeout: 30
+  tool: websploit
+target: web reconnaissance

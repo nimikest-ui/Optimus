@@ -1,0 +1,34 @@
+# Optimus Configuration
+
+# LLM Provider (grok, claude, groq, openai)
+llm_provider: "claude"
+
+# Model name (depends on provider)
+llm_model: "claude-opus-4-6"
+
+# API key (read from environment or set here)
+# Do NOT commit API keys to version control
+# api_key: "${ANTHROPIC_API_KEY}"
+
+# Optional base URL for custom endpoints (for Ollama, etc.)
+# base_url: null
+
+# Token budget per executor step
+token_budget_per_step: 4000
+
+# Session configuration
+session_db_path: "pentest.db"
+tools_db_path: "kali_tools.db"
+
+# Target scope files (per-project)
+scope_file_path: "config/scope/"
+
+# Artifact paths
+playbook_output_path: "artifacts/playbooks/"
+review_queue_path: "artifacts/review_queue/"
+
+# Tier definitions (Tier 1: passive, 2: active, 3: destructive)
+tiers:
+  1: "Passive reconnaissance (no network interaction)"
+  2: "Active scanning (network probes)"
+  3: "Destructive operations (data modification)"

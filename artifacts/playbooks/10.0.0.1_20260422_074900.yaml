@@ -1,0 +1,17 @@
+created: '2026-04-22T07:49:00.067883'
+description: Auto-generated playbook for 10.0.0.1
+name: test-20260422-074900
+steps:
+- args: Hello from 10.0.0.1
+  goal: Echo test message
+  step: 1
+  success_criteria: echo executed successfully
+  timeout: 10
+  tool: echo
+- args: ''
+  goal: Get current date
+  step: 2
+  success_criteria: date executed successfully
+  timeout: 10
+  tool: date
+target: 10.0.0.1

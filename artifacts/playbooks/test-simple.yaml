@@ -1,0 +1,18 @@
+name: test-simple
+description: Simple test playbook
+target: localhost
+created: '2026-04-22T07:00:00.000000'
+cves_addressed: []
+steps:
+  - step: 1
+    goal: Echo test message
+    tool: echo
+    args: "Hello from {TARGET}"
+    success_criteria: echo executed successfully
+    timeout: 10
+  - step: 2
+    goal: Get current date
+    tool: date
+    args: ""
+    success_criteria: date executed successfully
+    timeout: 10
