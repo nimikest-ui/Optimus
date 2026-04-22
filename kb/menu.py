@@ -79,10 +79,65 @@ class InteractiveMenu:
             self.running = False
 
     def chat_mode(self) -> None:
-        """Chat/conversation mode (placeholder)."""
-        print("\n💬 Chat Mode")
-        print("Not yet implemented")
-        questionary.confirm("Press Enter to continue...").ask()
+        """Chat mode: intelligent agent execution."""
+        print("\n💬 Chat with Intelligent Agent")
+        print("─" * 60)
+
+        mission = questionary.text(
+            "What's your mission? (e.g., 'find web vulnerabilities'):",
+            style=SPECTRAL_STYLE,
+        ).ask()
+
+        if not mission:
+            return
+
+        target = questionary.text(
+            "Target (IP or domain):",
+            style=SPECTRAL_STYLE,
+        ).ask()
+
+        if not target:
+            return
+
+        tier = questionary.select(
+            "Execution tier:",
+            choices=[
+                questionary.Choice("1 - Passive/Reconnaissance (safe)", 1),
+                questionary.Choice("2 - Active Scanning (may alert)", 2),
+                questionary.Choice("3 - Destructive/Exploit (high risk)", 3),
+            ],
+            style=SPECTRAL_STYLE,
+        ).ask()
+
+        if tier is None:
+            return
+
+        print(f"\n[AGENT] Starting mission: {mission}")
+        print(f"[AGENT] Target: {target}")
+        print(f"[AGENT] Tier: {tier}")
+        print("─" * 60)
+
+        try:
+            from core.agent import IntelligentAgent
+
+            agent = IntelligentAgent()
+            result = agent.execute_mission(
+                mission=mission,
+                target=target,
+                tier=tier,
+            )
+
+            print("\n" + "─" * 60)
+            print("[AGENT] ✅ Mission Complete!")
+            print(f"  Session: {result['session_id']}")
+            print(f"  Outcome: {result['outcome']}")
+            print(f"  Tools used: {len(result['tools_used'])}")
+            print(f"  CVEs found: {len(result['cves_found'])}")
+
+        except Exception as e:
+            print(f"\n[AGENT] ✗ Error: {str(e)}")
+
+        questionary.confirm("\nPress Enter to return to menu...").ask()
 
     def kb_research_mode(self) -> None:
         """KB research mode: run ingesters, view results."""
