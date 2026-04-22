@@ -259,10 +259,7 @@ class InteractiveMenu:
                 print(f"\nFound {len(results)} tools:")
                 for tool, desc, phase, success_rate in results:
                     rate_bar = "█" * int(success_rate * 10) + "░" * (10 - int(success_rate * 10))
-                    print(
-                        f"  {tool:20} | {phase:20} | {rate_bar} {success_rate:.2f}",
-                        style=SPECTRAL_STYLE,
-                    )
+                    print(f"  {tool:20} | {phase:20} | {rate_bar} {success_rate:.2f}")
             else:
                 print("No tools found")
 
