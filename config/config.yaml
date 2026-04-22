@@ -14,7 +14,10 @@ llm_model: "claude-opus-4-6"
 # base_url: null
 
 # Token budget per executor step
-token_budget_per_step: 4000
+token_budget: 4000
+
+# Default execution tier (1=passive, 2=active, 3=destructive)
+tier_default: 1
 
 # Session configuration
 session_db_path: "pentest.db"
