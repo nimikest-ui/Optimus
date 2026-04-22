@@ -271,7 +271,114 @@ class InteractiveMenu:
     def db_editor_mode(self) -> None:
         """Database editor: view/edit tool table."""
         print("\n📊 Database Editor")
-        print("Not yet implemented (would show interactive table)")
+
+        import sqlite3
+
+        action = questionary.select(
+            "What would you like to do?",
+            choices=[
+                questionary.Choice("View tools by search", "search"),
+                questionary.Choice("View tools by attack phase", "phase"),
+                questionary.Choice("Update tool success rate", "update"),
+                questionary.Choice("Back to menu", "back"),
+            ],
+            style=SPECTRAL_STYLE,
+        ).ask()
+
+        if action == "search":
+            search = questionary.text(
+                "Search for tool (name or keyword):",
+                style=SPECTRAL_STYLE,
+            ).ask()
+
+            if search:
+                conn = sqlite3.connect("kali_tools.db")
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT tool_name, attack_phase, success_rate, use_count
+                    FROM kali_tools
+                    WHERE tool_name LIKE ? OR one_line_desc LIKE ?
+                    LIMIT 10
+                    """,
+                    (f"%{search}%", f"%{search}%"),
+                )
+                results = cursor.fetchall()
+                conn.close()
+
+                if results:
+                    print(f"\nFound {len(results)} tools:")
+                    print(f"{'Tool':<25} {'Phase':<20} {'Score':<8} {'Uses':<6}")
+                    print("─" * 60)
+                    for tool, phase, score, uses in results:
+                        print(f"{tool:<25} {phase:<20} {score:<8.2f} {uses:<6}")
+                else:
+                    print("No tools found")
+
+        elif action == "phase":
+            conn = sqlite3.connect("kali_tools.db")
+            cursor = conn.cursor()
+            cursor.execute("SELECT DISTINCT attack_phase FROM kali_tools ORDER BY attack_phase")
+            phases = [row[0] for row in cursor.fetchall()]
+            conn.close()
+
+            phase = questionary.select(
+                "Select attack phase:",
+                choices=phases,
+                style=SPECTRAL_STYLE,
+            ).ask()
+
+            if phase:
+                conn = sqlite3.connect("kali_tools.db")
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT tool_name, success_rate, use_count
+                    FROM kali_tools
+                    WHERE attack_phase = ?
+                    ORDER BY success_rate DESC
+                    LIMIT 20
+                    """,
+                    (phase,),
+                )
+                results = cursor.fetchall()
+                conn.close()
+
+                print(f"\nTools in '{phase}' phase ({len(results)} total):")
+                print(f"{'Tool':<25} {'Score':<8} {'Uses':<6}")
+                print("─" * 40)
+                for tool, score, uses in results:
+                    print(f"{tool:<25} {score:<8.2f} {uses:<6}")
+
+        elif action == "update":
+            tool_name = questionary.text(
+                "Tool name to update:",
+                style=SPECTRAL_STYLE,
+            ).ask()
+
+            if tool_name:
+                new_score = questionary.text(
+                    "New success rate (0.0-1.0):",
+                    style=SPECTRAL_STYLE,
+                ).ask()
+
+                try:
+                    score = float(new_score)
+                    if 0.0 <= score <= 1.0:
+                        conn = sqlite3.connect("kali_tools.db")
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            "UPDATE kali_tools SET success_rate = ? WHERE tool_name = ?",
+                            (score, tool_name),
+                        )
+                        conn.commit()
+                        conn.close()
+                        print(f"✓ Updated {tool_name} score to {score}")
+                    else:
+                        print("✗ Score must be between 0.0 and 1.0")
+                except ValueError:
+                    print("✗ Invalid score format")
+
         questionary.confirm("Press Enter to continue...").ask()
 
     def sessions_mode(self) -> None:
@@ -310,8 +417,111 @@ class InteractiveMenu:
 
     def reports_mode(self) -> None:
         """Reports: view execution reports."""
-        print("\n📈 Reports")
-        print("Not yet implemented (would show reports)")
+        print("\n📈 Reports & Analysis")
+
+        import sqlite3
+        from pathlib import Path
+
+        action = questionary.select(
+            "What would you like to view?",
+            choices=[
+                questionary.Choice("Session summary", "summary"),
+                questionary.Choice("Recent successful runs", "success"),
+                questionary.Choice("Tool statistics", "stats"),
+                questionary.Choice("Saved playbooks", "playbooks"),
+                questionary.Choice("Back to menu", "back"),
+            ],
+            style=SPECTRAL_STYLE,
+        ).ask()
+
+        if action == "summary":
+            conn = sqlite3.connect("kali_tools.db")
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT COUNT(*) FROM sessions")
+            total_sessions = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM sessions WHERE outcome = 'success'")
+            successful = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM sessions WHERE outcome = 'partial'")
+            partial = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM steps")
+            total_steps = cursor.fetchone()[0]
+
+            conn.close()
+
+            success_rate = (successful / total_sessions * 100) if total_sessions > 0 else 0
+
+            print("\n📊 Overall Statistics:")
+            print(f"  Total sessions: {total_sessions}")
+            print(f"  Successful: {successful} ({success_rate:.1f}%)")
+            print(f"  Partial success: {partial}")
+            print(f"  Total steps executed: {total_steps}")
+
+        elif action == "success":
+            conn = sqlite3.connect("kali_tools.db")
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                SELECT id, project_id, target, started_at
+                FROM sessions
+                WHERE outcome = 'success'
+                ORDER BY started_at DESC
+                LIMIT 10
+                """,
+            )
+
+            sessions = cursor.fetchall()
+            conn.close()
+
+            if sessions:
+                print("\n✓ Recent Successful Runs:")
+                for sid, project, target, started in sessions:
+                    print(f"  [{sid}] {project:<20} → {target:<15} ({started})")
+            else:
+                print("No successful sessions found")
+
+        elif action == "stats":
+            conn = sqlite3.connect("kali_tools.db")
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                SELECT tool_name, COUNT(*) as uses, AVG(success_rate) as avg_score
+                FROM kali_tools
+                WHERE use_count > 0
+                ORDER BY use_count DESC
+                LIMIT 15
+                """,
+            )
+
+            results = cursor.fetchall()
+            conn.close()
+
+            if results:
+                print("\n🔧 Most Used Tools:")
+                print(f"{'Tool':<25} {'Uses':<6} {'Avg Score':<10}")
+                print("─" * 42)
+                for tool, uses, score in results:
+                    print(f"{tool:<25} {uses:<6} {score:<10.2f}")
+            else:
+                print("No tool usage data yet")
+
+        elif action == "playbooks":
+            playbooks_dir = Path("artifacts/playbooks")
+            playbooks = sorted(playbooks_dir.glob("*.yaml"))
+
+            if playbooks:
+                print(f"\n📋 Saved Playbooks ({len(playbooks)} total):")
+                for pb in playbooks:
+                    size = pb.stat().st_size
+                    print(f"  • {pb.name:<50} ({size} bytes)")
+            else:
+                print("No playbooks saved yet")
+
         questionary.confirm("Press Enter to continue...").ask()
 
     def settings_mode(self) -> None:
@@ -319,24 +529,95 @@ class InteractiveMenu:
         print("\n⚙️  Settings")
 
         import yaml
+        import os
 
         try:
             with open("config/config.yaml") as f:
-                config = yaml.safe_load(f)
+                config = yaml.safe_load(f) or {}
 
             current_provider = config.get("llm_provider", "claude")
             current_model = config.get("llm_model", "claude-opus-4-6")
             current_budget = config.get("token_budget", 4000)
+            current_tier = config.get("tier_default", 1)
 
             print(f"\nCurrent settings:")
             print(f"  Provider: {current_provider}")
             print(f"  Model: {current_model}")
             print(f"  Token budget: {current_budget}")
+            print(f"  Default tier: {current_tier}")
+
+            action = questionary.select(
+                "What would you like to change?",
+                choices=[
+                    questionary.Choice("LLM Provider", "provider"),
+                    questionary.Choice("LLM Model", "model"),
+                    questionary.Choice("Token Budget", "budget"),
+                    questionary.Choice("Default Tier", "tier"),
+                    questionary.Choice("Back to menu", "back"),
+                ],
+                style=SPECTRAL_STYLE,
+            ).ask()
+
+            if action == "provider":
+                provider = questionary.select(
+                    "Select LLM provider:",
+                    choices=["claude", "grok", "groq", "openai"],
+                    style=SPECTRAL_STYLE,
+                ).ask()
+
+                if provider:
+                    config["llm_provider"] = provider
+                    print(f"✓ Provider set to {provider}")
+
+            elif action == "model":
+                model = questionary.text(
+                    "Enter model name (e.g., claude-opus-4-6):",
+                    style=SPECTRAL_STYLE,
+                ).ask()
+
+                if model:
+                    config["llm_model"] = model
+                    print(f"✓ Model set to {model}")
+
+            elif action == "budget":
+                budget = questionary.text(
+                    "Enter token budget (default 4000):",
+                    style=SPECTRAL_STYLE,
+                ).ask()
+
+                try:
+                    budget_int = int(budget)
+                    config["token_budget"] = budget_int
+                    print(f"✓ Token budget set to {budget_int}")
+                except ValueError:
+                    print("✗ Invalid number")
+                    questionary.confirm("Press Enter to continue...").ask()
+                    return
+
+            elif action == "tier":
+                tier = questionary.select(
+                    "Select default tier:",
+                    choices=[
+                        questionary.Choice("1 - Passive", 1),
+                        questionary.Choice("2 - Active", 2),
+                        questionary.Choice("3 - Destructive", 3),
+                    ],
+                    style=SPECTRAL_STYLE,
+                ).ask()
+
+                if tier:
+                    config["tier_default"] = tier
+                    print(f"✓ Default tier set to {tier}")
+
+            # Save config if changes were made
+            if action != "back":
+                with open("config/config.yaml", "w") as f:
+                    yaml.dump(config, f, default_flow_style=False)
+                print("✓ Configuration saved")
 
         except Exception as e:
-            print(f"Error reading config: {e}")
+            print(f"Error: {e}")
 
-        print("\nSettings editing not yet fully implemented")
         questionary.confirm("Press Enter to continue...").ask()
 
     def sync_mode(self) -> None:
